@@ -61,11 +61,32 @@ int main()
 			{
 				y[i+1][j] = y[i][j] + c*(dt/dx)*(y[i][j]-y[i][j-1]);
 			}
-			
 		}
 	}
 
+	//Escribimso los datos en un archivo
 
+	FILE *arch;
+	arch= fopen("datos.dat", "w");
+	if (!arch)
+	{
+		printf("Problemas abriendo el archivos %s\n", "datos.dat" );
+		exit(1);
+	}
+
+	fprintf(arch, "%s\n", "Función Y Timepo  posicion" );
+	for (i=0;i < Nt; i++)
+	{
+		for ( j = 0; j < Nx; ++j)
+		{
+			fprintf(arch, "%f\n", y[i][j] );
+			fprintf(arch, "%f", t[i] );
+			fprintf(arch, "%f", x[j] );
+		}
+		
+	}
+
+	fclose(arch);
 
 	printf("%s \n", "Fin!");
 	return 0;
