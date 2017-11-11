@@ -9,37 +9,17 @@
 #define dt 0.01
 #define dx (4.0/1000)
 
-
-//Primero śolucionamos la ecuación de adevección que es una sola dimensión. Que además es el mismo del taller
-// calificable del laboratorio. 
+void coniciones_iniciales(double *x,double *phi0);
 
 int main()
 {	
 	//Primero es necesaario leer el archivo de condicions iniciales(ci). 
-
-	FILE *ci;
-	ci= fopen("cond_ini_cuerda.dat", "r");
-	if (!ci)
-	{
-		printf("Problemas abriendo el archivos %s\n", "datos.dat" );
-		exit(1);
-	}
-	int i;
-	double xval;
-	double phiini;
 	double *x , *phi0;
 	x  = malloc(Nx*sizeof(double));
 	phi0 = malloc(Nx*sizeof(double));
+	coniciones_iniciales(x,phi0);
 
-	for (i=0; i<Nx;i++ )
-	{
-		fscanf(ci, "%lf\n", &xval);
-		fscanf(ci, "%lf", &phiini);
-		x[i]= xval;
-		phi0[i]=phiini;
-	}
-	fclose(ci);
-
+	int i;
 	for (i = 0; i < Nx; ++i)
 	{
 		printf("%lf\n", phi0[i] );
@@ -52,6 +32,7 @@ int main()
 	
 	//Inicializo mis variables según los parametros dados. 
 	t[0]= 0.0;
+
 	for ( i = 1; i < Nt; i++)
 	{
 		t[i] = t[i-1] + dt;
@@ -121,5 +102,27 @@ int main()
 
 	printf("%s \n", "Fin!");
 	return 0;
+}
+
+void coniciones_iniciales(double *x, double *phi0)
+{
+	FILE *ci;
+	ci= fopen("cond_ini_cuerda.dat", "r");
+	if (!ci)
+	{
+		printf("Problemas abriendo el archivos %s\n", "datos.dat" );
+		exit(1);
+	}
+	double xval;
+	double phiini;
+
+	for (int i=0; i<Nx;i++ )
+	{
+		fscanf(ci, "%lf\n", &xval);
+		fscanf(ci, "%lf", &phiini);
+		x[i]= xval;
+		phi0[i]=phiini;
+	}
+	fclose(ci);
 }
 
