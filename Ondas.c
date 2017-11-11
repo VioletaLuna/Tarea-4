@@ -2,24 +2,55 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#define Nt 700
-#define Nx 1000
-#define	c 1.0
+#define L 0.64
+#define Nx 129
+#define Nt 129
+#define	c 250.0
 #define dt 0.01
 #define dx (4.0/1000)
+
 
 //Primero śolucionamos la ecuación de adevección que es una sola dimensión. Que además es el mismo del taller
 // calificable del laboratorio. 
 
 int main()
 {	
+	//Primero es necesaario leer el archivo de condicions iniciales(ci). 
+
+	FILE *ci;
+	ci= fopen("cond_ini_cuerda.dat", "r");
+	if (!ci)
+	{
+		printf("Problemas abriendo el archivos %s\n", "datos.dat" );
+		exit(1);
+	}
+	int i;
+	double xval;
+	double phiini;
+	double *x , *phi0;
+	x  = malloc(Nx*sizeof(double));
+	phi0 = malloc(Nx*sizeof(double));
+
+	for (i=0; i<Nx;i++ )
+	{
+		fscanf(ci, "%lf\n", &xval);
+		fscanf(ci, "%lf", &phiini);
+		x[i]= xval;
+		phi0[i]=phiini;
+	}
+	fclose(ci);
+
+	for (i = 0; i < Nx; ++i)
+	{
+		printf("%lf\n", phi0[i] );
+	}
+
 	//Declaro y aparto el espacio para mis dos variables
-	double *t , *x;
+	double *t;
 	t  = malloc(Nt*sizeof(double));
 	x = malloc(Nx*sizeof(double));
 	
 	//Inicializo mis variables según los parametros dados. 
-	int i;
 	t[0]= 0.0;
 	for ( i = 1; i < Nt; i++)
 	{
