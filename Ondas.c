@@ -6,10 +6,16 @@
 #define Nx 129
 #define Nt 129
 #define	c 250.0
-#define dt 0.01
-#define dx (4.0/1000)
+#define dt 1.0/Nt
+#define N2 101
+#define pi 3.14516
 
-void coniciones_iniciales(double *x,double *phi0);
+void condiciones_iniciales(double *x,double *phi0);
+void establecer_ci(double *phi0, double** phi);
+void solucionar (double** phi, double r, int n);
+void escribir_datos(double *X, double ** phi, int n);
+
+void condiciones_iniciales2(double **phi02);
 
 int main()
 {	
@@ -17,100 +23,62 @@ int main()
 	double *x , *phi0;
 	x  = malloc(Nx*sizeof(double));
 	phi0 = malloc(Nx*sizeof(double));
-	coniciones_iniciales(x,phi0);
+	condiciones_iniciales(x,phi0);
 
+	//Declaro, aparto espacio en la memoria e inicializo la matriz solución phi, con Nt, definido 
+	//arbitrariamente.  
+	double ** phi= malloc(Nt*sizeof(double*));
 	int i;
-	for (i = 0; i < Nx; ++i)
-	{
-		printf("%lf\n", phi0[i] );
-	}
-
-	//Declaro y aparto el espacio para mis dos variables
-	double *t;
-	t  = malloc(Nt*sizeof(double));
-	x = malloc(Nx*sizeof(double));
-	
-	//Inicializo mis variables según los parametros dados. 
-	t[0]= 0.0;
-
-	for ( i = 1; i < Nt; i++)
-	{
-		t[i] = t[i-1] + dt;
-	} 
-
-	x[0]=-2.0;
-	for ( i = 1; i < Nx; i++) 
-	{
-		x[i] = x[i-1] + dx;
-	}
-
-	//Declaro, aparto espacio enla memoria e inicializo la matriz solución y.  
-	double ** y= malloc(Nt*sizeof(double*));
 	for ( i = 0; i < Nt; i++) 
 	{
-		y[i] = malloc(Nx*sizeof(double));
+		phi[i] = malloc(Nx*sizeof(double));
+	}
+	establecer_ci(phi0, phi);
+
+	//Ahora debo solucionar le acuación con la expresión que se ya se encuentra establecida. 
+	double dx = x[1] - x[2];
+	double r = c*(dt/dx);
+	solucionar(phi,r,1);
+	escribir_datos(x, phi,1);
+	//Solucionamos la ecucion con la condición de frontera dada. 
+	solucionar(phi,r,2);
+	escribir_datos(x, phi,2);
+
+	//Ahora vamos a hacer lo mismo pero par la ecuación diferencial en
+	free(phi0);
+	free(phi);
+	free(x);
+	double *y;
+	x  = malloc(N2*sizeof(double));
+	y  = malloc(N2*sizeof(double));
+
+	double ** phi02= malloc(N2*sizeof(double*));
+	for ( i = 0; i < N2; i++) 
+	{
+		phi02[i] = malloc(N2*sizeof(double));
 	}
 
-	//Establecemos la condicón inicial
-	for (i=0; i < Nx; i++)
+	double ** phi8= malloc(N2*sizeof(double*));
+	double ** phi4= malloc(N2*sizeof(double*));
+	double ** phi2= malloc(N2*sizeof(double*));
+
+	condiciones_iniciales2(phi02);
+	for (int i = 0; i < N2; ++i)
 	{
-		y[0][i] = exp(-100*(pow(x[i],2)));
-
-	} 
-
-	int j;
-	for (j=0; j<Nx; j++)
-	{
-		for (i=0; i < Nt-1; i ++)
-		{
-			//Condición de extemso fijos
-			if(j ==0 || j == Nx -1)
-			{
-				y[i+1][j]= y[i][j];
-
-			}
-			else
-			{
-				y[i+1][j] = y[i][j] + c*(dt/dx)*(y[i][j]-y[i][j-1]);
-			}
-		}
+		printf("%lf\n", phi02[0][i]);
 	}
-
-	//Escribimso los datos en un archivo
-
-	FILE *arch;
-	arch= fopen("datos.dat", "w");
-	if (!arch)
-	{
-		printf("Problemas abriendo el archivos %s\n", "datos.dat" );
-		exit(1);
-	}
-
-	fprintf(arch, "%s\n", "Función Y Timepo  posicion" );
-	for (i=0;i < Nt; i++)
-	{
-		for ( j = 0; j < Nx; ++j)
-		{
-			fprintf(arch, "%f\n", y[i][j] );
-			fprintf(arch, "%f", t[i] );
-			fprintf(arch, "%f", x[j] );
-		}
-		
-	}
-
-	fclose(arch);
 
 	printf("%s \n", "Fin!");
 	return 0;
 }
 
-void coniciones_iniciales(double *x, double *phi0)
+void condiciones_iniciales(double *x, double *phi0)
 {
 	FILE *ci;
 	ci= fopen("cond_ini_cuerda.dat", "r");
 	if (!ci)
 	{
-		printf("Problemas abriendo el archivos %s\n", "datos.dat" );
+		printf("Problemas abriendo el archivos %s\n", "cond_ini_cuerda.dat" );
 		exit(1);
 	}
 	double xval;
@@ -126,3 +94,97 @@ void coniciones_iniciales(double *x, double *phi0)
 	fclose(ci);
 }
 
+void establecer_ci(double *phi0, double** phi)
+{
+	for (int i=0; i < Nx; i++)
+	{
+		phi[0][i] = phi0[i];
+	} 
+
+}
+//Metodo que me soluciona la ecuaión diferencial a parir de la expresión que se ha establaecido en el github.
+//n es el número que representa a las condiciones de frontera, 1 ambas fijas. 
+void solucionar (double** phi, double r, int n)
+{
+	for (int x=0; x<Nx; x++)
+	{
+		for (int t=0; t < Nt-1; t ++)
+		{
+			//Condición de extemso fijos
+			if( x ==0)
+			{
+				phi[t+1][x]= phi[t][x];
+			}
+			else if (x == Nx -1)
+			{
+				if(n==1)
+				{
+					phi[t+1][x]= phi[t][x];
+				}
+				else 
+				{
+					phi[t+1][x] = sin(2*pi*c*t*dt/L);
+				}
+			}
+			else
+			{
+				phi[t+1][x] = 2*(1-pow(r,2))*phi[t][x] - r*(phi[t][x+1]-phi[t][x-1]);
+			}
+		}
+	}
+}
+//Metodo que escribe en un archivo los resultados de la soluciń de al ecuación. 
+//n es el número que corresponde las condiciones de frontera, 1 ambas fijas.
+void escribir_datos(double *X ,double** phi,int n)
+{
+	FILE *arch;
+	if (n==1)
+	{
+	arch= fopen("resultados1D.dat", "w");
+	}
+	else
+	{
+		arch= fopen("resultados2D.dat", "w");
+	}
+	if (!arch)
+	{
+		printf("Problemas abriendo el archivos %s\n", "resultados.dat" );
+		exit(1);
+	}
+
+	fprintf(arch, "%s\n", "x , t = 0 , t = T/8 , t = T/4 , t = T/2" );
+	for (int x = 0; x < Nx; ++x)
+	{
+		fprintf(arch, "%e ,", X[x] );
+		fprintf(arch, "%e ,", phi[0][x] );
+		fprintf(arch, "%e \n", phi[15][x] );
+	}	
+}
+
+void condiciones_iniciales2(double** phi0)
+{
+	FILE *ci;
+	ci= fopen("cond_ini_tambor.dat", "r");
+	if (!ci)
+	{
+		printf("Problemas abriendo el archivos %s\n", "cond_ini_tambor.dat" );
+		exit(1);
+	}
+	double val;
+	//En las condiocnes inicales me dan una matriz N2 x N2 donde vamos suponer que las filas son x y 
+	//las columnas y.
+	for (int x=0; x<N2;x++ )
+	{		
+		for (int y = 0; y < N2; ++y)
+		{
+			if (y ==0)
+			{
+				fscanf(ci, "%lf\n", &val);
+				phi0[x][y]= val;
+			}	
+			fscanf(ci, "%lf", &val);
+			phi0[x][y]= val;
+		}
+	}
+	fclose(ci);
+}
