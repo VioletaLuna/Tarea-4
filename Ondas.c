@@ -18,6 +18,7 @@ void escribir_datos(double *X, double ** phi, int n);
 
 void condiciones_iniciales2(double **phi02);
 void solucionar2(double **phi02, double **phi8, double **phi4, double **phi2);
+void escribir_datos2(double **phi02, double **phi8, double **phi4, double **phi2);
 
 int main()
 {	
@@ -79,13 +80,8 @@ int main()
 	}
 
 	condiciones_iniciales2(phi02);
-	for (int i = 0; i < N2; ++i)
-	{
-		printf("%lf\n", phi02[1][i]);
-	}
-
 	solucionar2(phi02,phi8, phi4, phi2);
-
+	escribir_datos2(phi02,phi8, phi4, phi2);
 
 	printf("%s \n", "Fin!");
 	return 0;
@@ -159,25 +155,34 @@ void escribir_datos(double *X ,double** phi,int n)
 	FILE *arch;
 	if (n==1)
 	{
-	arch= fopen("resultados1D.dat", "w");
+		arch= fopen("resultados1DFijo.dat", "w");
+		if (!arch)
+		{
+			printf("Problemas abriendo el archivos %s\n", "resultados1DFijo.dat" );
+			exit(1);
+		}
 	}
 	else
 	{
-		arch= fopen("resultados2D.dat", "w");
+		arch= fopen("resultados1DPerturbado.dat", "w");
+		if (!arch)
+		{
+			printf("Problemas abriendo el archivos %s\n", "resultados1DPerturbado.dat" );
+			exit(1);
+		}
 	}
-	if (!arch)
-	{
-		printf("Problemas abriendo el archivos %s\n", "resultados.dat" );
-		exit(1);
-	}
-
-	fprintf(arch, "%s\n", "x , t = 0 , t = T/8 , t = T/4 , t = T/2" );
+	
+	fprintf(arch, "%s\n", "x , phi(t=0) , phi(t=T/8) , phi(t=T/4) , phi(t=T/2)" );
 	for (int x = 0; x < Nx; ++x)
 	{
-		fprintf(arch, "%e ,", X[x] );
-		fprintf(arch, "%e ,", phi[0][x] );
-		fprintf(arch, "%e \n", phi[15][x] );
-	}	
+		fprintf(arch, "%e , ", X[x] );
+		fprintf(arch, "%e , ", phi[0][x] );
+		fprintf(arch, "%e , ", phi[Nt/8][x]);
+		fprintf(arch, "%e , ", phi[Nt/4][x]);
+		fprintf(arch, "%e  \n", phi[Nt/2][x]);
+
+	}
+	fclose(arch);
 }
 
 void condiciones_iniciales2(double** phi0)
@@ -298,4 +303,75 @@ void solucionar2(double **phi02, double **phi8, double **phi4, double **phi2)
 			}
 		}
 	}
+}
+
+void escribir_datos2(double **phi02, double **phi8, double **phi4, double **phi2)
+{
+	FILE *arch0;
+	arch0= fopen("resultados2D0.dat", "w");
+	if (!arch0)
+	{
+		printf("Problemas abriendo el archivos %s\n", "resultados2D0.dat" );
+		exit(1);
+	}
+
+	FILE *arch8;
+	arch8= fopen("resultados2D8.dat", "w");
+	if (!arch8)
+	{
+		printf("Problemas abriendo el archivos %s\n", "resultados2D8.dat" );
+		exit(1);
+	}
+
+	FILE *arch4;
+	arch4= fopen("resultados2D4.dat", "w");
+	if (!arch4)
+	{
+		printf("Problemas abriendo el archivos %s\n", "resultados2D4.dat" );
+		exit(1);
+	}
+
+	FILE *arch2;
+	arch2= fopen("resultados2D2.dat", "w");
+	if (!arch2)
+	{
+		printf("Problemas abriendo el archivos %s\n", "resultados2D2.dat" );
+		exit(1);
+	}
+
+	//En los archivos se imprime como filas las x y como columnas las y.
+	for (int x = 0; x < N2; ++x)
+	{
+		for (int y = 0; y < N2; ++y)
+		{
+			if(y==0)
+			{
+				fprintf(arch0, "%lf", phi02[x][y]);
+				fprintf(arch8, "%lf", phi8[x][y]);
+				fprintf(arch4, "%lf", phi4[x][y]);
+				fprintf(arch2, "%lf", phi2[x][y]);
+			}
+			else if (y==N2-1)
+			{
+				fprintf(arch0, "%lf \n", phi02[x][y]);
+				fprintf(arch8, "%lf \n", phi8[x][y]);
+				fprintf(arch4, "%lf \n", phi4[x][y]);
+				fprintf(arch2, "%lf \n", phi2[x][y]);
+			}
+			else 
+			{
+				fprintf(arch0, "%lf , ", phi02[x][y]);
+				fprintf(arch8, "%lf , ", phi8[x][y]);
+				fprintf(arch4, "%lf , ", phi4[x][y]);
+				fprintf(arch2, "%lf , ", phi2[x][y]);
+			}
+			
+		}
+		
+	}
+
+	fclose(arch0);
+	fclose(arch8);
+	fclose(arch4);
+	fclose(arch2);
 }
