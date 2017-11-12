@@ -1,5 +1,10 @@
 #Makefile de la tarea 4. 
-all : Plots.py
+all: cuerdaFijos.pdf
 
-Plots.py: resultados1DFijo.dat resultados1Dperturbado.dat resultados2D0.dat resultados2D8.dat resultados2D4.dat resultados2D2.dat
-	python Plots.py
+cuerdaFijos.pdf: Plots.py
+	python Plots.py &
+
+Plots.py: Ondas.c 
+	cc Ondas.c -o Ondas.x -lm
+	./Ondas.x 	
+	python Plots.py &
