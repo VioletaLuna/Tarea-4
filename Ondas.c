@@ -9,6 +9,7 @@
 #define dt 1.0/Nt
 #define N2 101
 #define pi 3.14516
+#define lado 0.5
 
 void condiciones_iniciales(double *x,double *phi0);
 void establecer_ci(double *phi0, double** phi);
@@ -16,6 +17,7 @@ void solucionar (double** phi, double r, int n);
 void escribir_datos(double *X, double ** phi, int n);
 
 void condiciones_iniciales2(double **phi02);
+void solucionar2(double **phi02, double **phi8, double **phi4, double **phi2);
 
 int main()
 {	
@@ -59,14 +61,31 @@ int main()
 	}
 
 	double ** phi8= malloc(N2*sizeof(double*));
+	for ( i = 0; i < N2; i++) 
+	{
+		phi8[i] = malloc(N2*sizeof(double));
+	}
+
 	double ** phi4= malloc(N2*sizeof(double*));
+	for ( i = 0; i < N2; i++) 
+	{
+		phi4[i] = malloc(N2*sizeof(double));
+	}
+
 	double ** phi2= malloc(N2*sizeof(double*));
+	for ( i = 0; i < N2; i++) 
+	{
+		phi2[i] = malloc(N2*sizeof(double));
+	}
 
 	condiciones_iniciales2(phi02);
 	for (int i = 0; i < N2; ++i)
 	{
-		printf("%lf\n", phi02[0][i]);
+		printf("%lf\n", phi02[1][i]);
 	}
+
+	solucionar2(phi02,phi8, phi4, phi2);
+
 
 	printf("%s \n", "Fin!");
 	return 0;
@@ -187,4 +206,96 @@ void condiciones_iniciales2(double** phi0)
 		}
 	}
 	fclose(ci);
+}
+
+void solucionar2(double **phi02, double **phi8, double **phi4, double **phi2)
+{
+	//Utilizando la expreción para calular el avance del tiempo del nodo central por el meotod de diferencias 
+	//finitas. Tomada de: http://matematicas.uclm.es/cedya09/archive/textos/20_Urena-Prieto-F.pdf
+	//Entonces debo recorrer las posiciones horizontales (x), las verticales (y) y el timepo (t).
+	double v1=0;
+	double v2 =0;
+	double v3 =0;
+	double v4 = 0;
+	double v5 =0;
+	double v6 =0;
+	double v7=0;
+	double v8=0;
+	double xy0 =0;
+	double antxy0 =0;
+	double dt2 = 1.0/N2;
+	double dxy = lado/N2;
+	double ** temporal = malloc(N2*sizeof(double*));
+	for ( int i = 0; i < N2; i++) 
+	{
+		temporal[i] = malloc(N2*sizeof(double));
+	}
+	
+	for (int t = 0; t < N2; ++t)
+	{
+		for (int x = 1; x < N2-1; ++x)
+		{
+			for (int y = 1; y < N2-1; ++y)
+			{
+				if(t==0)
+				{
+					v1 = phi02[x-1][y-1];
+					v2 = phi02[x-1][y];	
+					v3 = phi02[x-1][y+1];
+					v4 = phi02[x][y-1];
+					v5 = phi02[x][y+1];
+					v6 = phi02[x+1][y-1];
+					v7 = phi02[x+1][y];
+					v8 = phi02[x+1][y+1];
+					xy0 = phi02[x][y];
+					temporal[x][y]=2*xy0+(pow(dt,2)*pow(c,2)/(6*pow(dxy,2)))*(-20*xy0+4*v1+v2+4*v3+v4+4*v5+v6+4*v7+v8);
+				}
+
+				else
+				{
+					v1 = temporal[x-1][y-1];
+					v2 = temporal[x-1][y];	
+					v3 = temporal[x-1][y+1];
+					v4 = temporal[x][y-1];
+					v5 = temporal[x][y+1];
+					v6 = temporal[x+1][y-1];
+					v7 = temporal[x+1][y];
+					v8 = temporal[x+1][y+1];
+					antxy0 = xy0;
+					xy0 = temporal[x][y];
+					temporal[x][y]=2*xy0+ antxy0 +(pow(dt,2)*pow(c,2)/(6*pow(dxy,2)))*(-20*xy0+4*v1+v2+4*v3+v4+4*v5+v6+4*v7+v8);	
+				}
+			}
+		}
+		if (t == N2/8)
+		{
+			for (int x = 0; x <N2; ++x)
+			{
+				for (int y = 0; y <N2; ++y)
+				{
+					phi8[x][y]= temporal[x][y];
+				}
+			}
+		}
+		else if (t == N2/4)
+		{
+			for (int x = 0; x <N2; ++x)
+			{
+				for (int y = 0; y <N2; ++y)
+				{
+					phi4[x][y]= temporal[x][y];
+				}
+			}
+		}
+		else if (t == N2/2)
+		{
+			for (int x = 0; x <N2; ++x)
+			{
+				for (int y = 0; y <N2; ++y)
+				{
+					phi2[x][y]= temporal[x][y];
+				}
+			}
+		}
+	}
 }
